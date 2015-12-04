@@ -672,12 +672,12 @@ static int baseband_modem_power_on(struct baseband_power_platform_data *data)
 	if (machine_is_enrc2b() || machine_is_enrc2u())
 	{
 		int counter = 0;
-		const int max_retry = 5;
+		const int max_retry = 10;
 
 		while (!gpio_get_value(data->modem.xmm.bb_rst2) && counter < max_retry)
 		{
 			counter++;
-			msleep(25);
+			mdelay(3);
 		}
 
 		if(counter == max_retry)
@@ -1468,11 +1468,12 @@ static void baseband_xmm_power_L2_resume_work(struct work_struct *work)
 static void baseband_xmm_power_reset_on(void)
 {
 	/* reset / power on sequence */
+	gpio_set_value(baseband_power_driver_data->modem.xmm.bb_rst, 0);
 	msleep(40);
 	gpio_set_value(baseband_power_driver_data->modem.xmm.bb_rst, 1);
-	msleep(1);
+	mdelay(1);
 	gpio_set_value(baseband_power_driver_data->modem.xmm.bb_on, 1);
-	udelay(40);
+	udelay(70);
 	gpio_set_value(baseband_power_driver_data->modem.xmm.bb_on, 0);
 }
 
@@ -1820,6 +1821,9 @@ static int baseband_xmm_power_driver_probe(struct platform_device *device)
 				__func__);
 			return err;
 		}
+		err = enable_irq_wake(gpio_to_irq(data->modem.xmm.ipc_ap_wake));
+		if (err < 0)
+			 pr_err("%s: enable_irq_wake error\n", __func__);
 		ipc_ap_wake_state = IPC_AP_WAKE_IRQ_READY;
 		if (modem_ver >= XMM_MODEM_VER_1130) {
 			pr_debug("%s: ver > 1130: AP_WAKE_INIT1\n", __func__);
