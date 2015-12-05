@@ -677,7 +677,7 @@ static int baseband_modem_power_on(struct baseband_power_platform_data *data)
 		while (!gpio_get_value(data->modem.xmm.bb_rst2) && counter < max_retry)
 		{
 			counter++;
-			msleep(25);
+			msleep_interruptible(25);
 		}
 
 		if(counter == max_retry)
