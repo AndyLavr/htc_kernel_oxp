@@ -152,7 +152,7 @@ extern int get_tamper_sf(void);
 
 #ifdef CONFIG_TOUCHSCREEN_SYNAPTICS_SWEEP2WAKE
 /* S2W free swipe and stroke variables */
-#define S2W_TAG "[sweep2wake]: "
+#define S2W_TAG "[S2W] "
 /* beyond this threshold the panel will not register to apps */
 static unsigned int s2w_register_threshold = 9;
 /* power will toggle at this distance from start point */
@@ -194,7 +194,7 @@ static void sweep2wake_presspwr(struct work_struct * sweep2wake_presspwr_work) {
 	if (!mutex_trylock(&pwrkeyworklock))
 		return;
 
-	pr_info(S2W_TAG "mode=%d", mode);
+	pr_info(S2W_TAG "emulate power key press. mode = %d", mode);
 
 	input_event(sweep2wake_pwrdev, EV_KEY, KEY_POWER, 1);
 	input_event(sweep2wake_pwrdev, EV_SYN, 0, 0);

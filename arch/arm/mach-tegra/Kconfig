@@ -885,7 +885,7 @@ config HTC_PERFORMANCE_MONITOR_ALWAYS_ON
 
 config 2A_CABLE_DETECT_CAR
 	tristate "UltraFast 2A charging when in CAR Dock"
-	depends on 2A_CHARGER_DETECT
+	depends on USB_2A_CHARGER_DETECT
 	default n
 	help
 	  Provides 2A CAR_DOCK charger configuration.
