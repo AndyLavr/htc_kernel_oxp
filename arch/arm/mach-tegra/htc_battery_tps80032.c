@@ -1480,6 +1480,8 @@ static long htc_batt_ioctl(struct file *filp,
 				htc_batt_info.rep.charging_enabled = 0;
 			}
 			htc_batt_info.rep.over_vchg = htc_batt_info.over_vchg;
+			/* set battery capacity to 2100 mAh */
+			// htc_batt_info.rep.full_bat = 2100000;
 		}
 
 		if (quickboot_low_power_boot && htc_batt_info.rep.level >= 4)
