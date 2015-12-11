@@ -1306,7 +1306,9 @@ static int __devinit sdhci_tegra_probe(struct platform_device *pdev)
 		alarm_init(&htc_mmc_bkops_alarm,
 		ANDROID_ALARM_ELAPSED_REALTIME_WAKEUP,
 		mmc_bkops_alarm_handler);
-        }
+	}
+	/* enable async suspend/resume to reduce LP0 latency */
+	device_enable_async_suspend(&pdev->dev);
 
 	return 0;
 
