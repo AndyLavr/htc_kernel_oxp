@@ -2312,7 +2312,7 @@ static int htc_battery_remove(struct platform_device *pdev)
 	CHECK_LOG();
 
 	for (i = 0; i < ARRAY_SIZE(tps80032_batt_attrs); i++) {
-		device_remove_file(dev, &tps80032_batt_attrs[i]);
+		device_remove_file(&pdev->dev, &tps80032_batt_attrs[i]);
 	}
 	return 0;
 }
