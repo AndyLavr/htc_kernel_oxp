@@ -53,6 +53,7 @@ struct synaptics_ts_data {
 	struct input_dev *sr_input_dev;
 	struct workqueue_struct *syn_wq;
 	struct function_t *address_table;
+	bool irq_wake_enabled;
 	int use_irq;
 	int gpio_irq;
 	int gpio_reset;
@@ -152,7 +153,7 @@ extern int get_tamper_sf(void);
 
 #ifdef CONFIG_TOUCHSCREEN_SYNAPTICS_SWEEP2WAKE
 /* S2W free swipe and stroke variables */
-#define S2W_TAG "[S2W] "
+#define S2W_TAG "[TP][S2W] "
 /* beyond this threshold the panel will not register to apps */
 static unsigned int s2w_register_threshold = 9;
 /* power will toggle at this distance from start point */
@@ -1916,10 +1917,15 @@ static int synaptics_touch_sysfs_init(void)
 #endif
 
 #ifdef SYN_WIRELESS_DEBUG
-	ret= gpio_request(ts->gpio_irq, "synaptics_attn");
-	if (ret) {
-		printk(KERN_INFO "[TP]%s: Failed to obtain touchpad IRQ %d. Code: %d.", __func__, ts->gpio_irq, ret);
-		return ret;
+	// IRQ is already enabled, so the following request will give -EBUSY, process it!
+	if (ts->use_irq) {
+		ret = gpio_request(ts->gpio_irq, "synaptics_attn");
+		if (ret == -EBUSY)
+				printk(KERN_INFO "[TP]%s: Duplicated gpio request IRQ %d. Code: %d.", __func__, ts->gpio_irq, ret);
+		else if (ret) {
+			printk(KERN_INFO "[TP]%s: Failed to obtain touchpad IRQ %d. Code: %d.", __func__, ts->gpio_irq, ret);
+			return ret;
+		}
 	}
 	if (ts->gpio_reset) {
 		ret = gpio_request(ts->gpio_reset, "synaptics_reset");
@@ -3339,6 +3345,14 @@ static int synaptics_ts_probe(
 
 	gl_ts = ts;
 
+	// request and eneable gpio IRQ
+#ifdef CONFIG_TOUCHSCREEN_SYNAPTICS_SWEEP2WAKE
+	ts->irq_wake_enabled = true;
+#else
+	ts->irq_wake_enabled = false;
+#endif
+	device_init_wakeup(&client->dev, ts->irq_wake_enabled);
+	ts->irq_wake_enabled = false;
 	ts->irq_enabled = 0;
 	if (client->irq) {
 		ts->use_irq = 1;
@@ -3418,6 +3432,7 @@ err_create_wq_failed:
 
 err_get_intr_bit_failed:
 err_input_register_device_failed:
+	device_init_wakeup(&client->dev, false);
 	input_free_device(ts->input_dev);
 
 err_init_panel_failed:
@@ -3443,6 +3458,7 @@ static int synaptics_ts_remove(struct i2c_client *client)
 {
 	struct synaptics_ts_data *ts = i2c_get_clientdata(client);
 	unregister_early_suspend(&ts->early_suspend);
+	device_init_wakeup(&client->dev, false);
 	if (ts->use_irq)
 		free_irq(client->irq, ts);
 	else {
@@ -3475,20 +3491,35 @@ static int synaptics_ts_suspend(struct i2c_client *client, pm_message_t mesg)
 #ifdef CONFIG_TOUCHSCREEN_SYNAPTICS_SWEEP2WAKE
 	if (s2w_active()) {
 		//screen off, enable_irq_wake
-		printk(KERN_INFO "[TP] enable_irq_wake\n");
-		enable_irq_wake(client->irq);
+		if (device_may_wakeup(&client->dev) && !ts->irq_wake_enabled) {
+			if (ts->use_irq && !ts->irq_enabled) {
+				enable_irq(client->irq);
+				ts->irq_enabled = 1;
+			}
+			if (!ts->irq_wake_enabled) {
+				enable_irq_wake(client->irq);
+				ts->irq_wake_enabled = true;
+			}
+		} else {
+			if (ts->irq_enabled) {
+				disable_irq(client->irq);
+				ts->irq_enabled = 0;
+			}
+		}
 	}
 #endif
-
 	if (ts->use_irq) {
 #ifdef CONFIG_TOUCHSCREEN_SYNAPTICS_SWEEP2WAKE
 		if (!s2w_active()) {
-#endif		
-			disable_irq(client->irq);
-			ts->irq_enabled = 0;
+#endif
+			if (ts->irq_enabled) {
+				disable_irq(client->irq);
+				ts->irq_enabled = 0;
+			}
 #ifdef CONFIG_TOUCHSCREEN_SYNAPTICS_SWEEP2WAKE
 		}
 #endif
+	pr_info(S2W_TAG "Suspend: irq_wake_enabled=%d irq_enabled=%d\n", ts->irq_wake_enabled, ts->irq_enabled);
 	} else {
 		hrtimer_cancel(&ts->timer);
 		ret = cancel_work_sync(&ts->work);
@@ -3641,7 +3672,18 @@ static int synaptics_ts_resume(struct i2c_client *client)
 		hr_msleep(150);
 		ret = 0;
 		//screen on, disable_irq_wake
-		disable_irq_wake(client->irq);
+		if (ts->use_irq) {
+			if (device_may_wakeup(&client->dev) && ts->irq_wake_enabled) {
+				disable_irq_wake(client->irq);
+				ts->irq_wake_enabled = false;
+			} else {
+				if (ts->use_irq && !ts->irq_enabled) {
+					enable_irq(client->irq);
+					ts->irq_enabled = 1;
+				}
+			}
+		}
+		pr_info(S2W_TAG "resume: irq_wake_enabled=%d irq_enabled=%d\n", ts->irq_wake_enabled, ts->irq_enabled);
 	} else {
 #endif
 #ifdef SYN_SUSPEND_RESUME_POWEROFF
