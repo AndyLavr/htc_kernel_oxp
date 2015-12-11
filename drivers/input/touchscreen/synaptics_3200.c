@@ -159,17 +159,18 @@ static unsigned int s2w_register_threshold = 9;
 static unsigned int s2w_min_distance = 325;
 /* use either direction for on/off */
 static bool s2w_allow_stroke = true;
+/* pocket detection to prevent accidental wakes */
+static bool s2w_pocket_detect = true;
 static bool s2w_switch = true;
 static bool scr_suspended = false;
 static bool exec_count = true;
 static bool barrier = false;
 static bool mode=true;
-static bool pocket_detect = true;
 
 /*DT2W variables */
 static bool s2w_allow_double_tap = false;
 static unsigned int s2w_double_tap_duration = 150; /* msecs */
-static unsigned int s2w_double_tap_threshold = 500; /* msecs */
+static unsigned int s2w_double_tap_threshold = 300; /* msecs */
 /* 0 = works on whole screen area, 1780 = works only in virtual key panel area */
 static unsigned int s2w_double_tap_dead_area = 1780; /* Y - points. Double tap to wake detect area */
 static unsigned int s2w_double_tap_start = 0;
@@ -209,9 +210,9 @@ static DECLARE_WORK(sweep2wake_presspwr_work, sweep2wake_presspwr);
 bool sweep2wake_pwrtrigger(void) {
 	int pocket_mode = 0;
 
-	if (scr_suspended && pocket_detect)
-		pocket_mode = power_key_check_in_pocket();
-	if (pocket_mode == 0 || !pocket_detect) {
+	if (scr_suspended && s2w_pocket_detect)
+		pocket_mode = pocket_detection_check();
+	if (pocket_mode == 0 || !s2w_pocket_detect) {
 		schedule_work(&sweep2wake_presspwr_work);
 		hr_msleep(230);
 		return true;
@@ -393,7 +394,7 @@ static int i2c_syn_error_handler(struct synaptics_ts_data *ts, uint8_t reset, ch
 	if (reason && fun_name)
 		printk(KERN_ERR "[TP] TOUCH_ERR: I2C Error: %s:%s, reset = %d\n", fun_name, reason, reset);
 	else
-		printk(KERN_INFO "[TP] %s: rason and fun_name can't be null\n", __func__);
+		printk(KERN_INFO "[TP] %s: reason and fun_name can't be null. I2C Error: %s:%s, reset = %d\n", __func__, fun_name, reason, reset);
 
 	if (reset) {
 		if (ts->power) {
@@ -1617,32 +1618,33 @@ static ssize_t set_en_sr(struct device *dev, struct device_attribute *attr,
 static DEVICE_ATTR(sr_en, S_IWUSR, 0, set_en_sr);
 
 #ifdef CONFIG_TOUCHSCREEN_SYNAPTICS_SWEEP2WAKE
-static ssize_t synaptics_pocket_detect_show(struct device *dev, struct device_attribute *attr, char *buf) {
+static ssize_t synaptics_s2w_pocket_detect_show(struct device *dev, struct device_attribute *attr, char *buf) {
 	size_t count = 0;
 
 	count += sprintf(buf, "%d\n", pocket_detect);
+	count += sprintf(buf, "%d\n", s2w_pocket_detect);
 	return count;
 }
 
-static ssize_t synaptics_pocket_detect_dump(struct device *dev, struct device_attribute *attr, const char *buf, size_t count) {
+static ssize_t synaptics_s2w_pocket_detect_dump(struct device *dev, struct device_attribute *attr, const char *buf, size_t count) {
 	unsigned long value;
 	int ret = 0;
 	ret = strict_strtoul(buf, 10, &value);
 
 	if (ret < 0) {
-		pr_info(S2W_TAG "set pocket_detect failed %s", buf);
+		pr_info(S2W_TAG "set s2w_pocket_detect failed %s", buf);
 		return count;
 	}
 	if (value == 0 || value == 1) {
-		pocket_detect = (bool)value;
-		pr_info(S2W_TAG "pocket_detect=%d", pocket_detect);
+		s2w_pocket_detect = (bool)value;
+		pr_info(S2W_TAG "s2w_pocket_detect=%d", s2w_pocket_detect);
 	} else {
-		pr_info(S2W_TAG "set pocket_detect failed - valid values are 0 or 1 - %s", buf);
+		pr_info(S2W_TAG "set s2w_pocket_detect failed - valid values are 0 or 1 - %s", buf);
 	}
 	return count;
 }
 
-static DEVICE_ATTR(pocket_detect, (S_IWUSR|S_IRUGO), synaptics_pocket_detect_show, synaptics_pocket_detect_dump);
+static DEVICE_ATTR(s2w_pocket_detect, (S_IWUSR|S_IRUGO), synaptics_s2w_pocket_detect_show, synaptics_s2w_pocket_detect_dump);
 
 static ssize_t synaptics_s2w_min_distance_show(struct device *dev, struct device_attribute *attr, char *buf) {
 	size_t count = 0;
@@ -1903,7 +1905,7 @@ static int synaptics_touch_sysfs_init(void)
 		sysfs_create_file(android_touch_kobj, &dev_attr_s2w_allow_stroke.attr) ||
 		sysfs_create_file(android_touch_kobj, &dev_attr_s2w_register_threshold.attr) ||
 		sysfs_create_file(android_touch_kobj, &dev_attr_s2w_min_distance.attr) ||
-		sysfs_create_file(android_touch_kobj, &dev_attr_pocket_detect.attr) ||
+		sysfs_create_file(android_touch_kobj, &dev_attr_s2w_pocket_detect.attr) ||
 		/* DT2W SYSFS STUFF */
 		sysfs_create_file(android_touch_kobj, &dev_attr_s2w_allow_double_tap.attr) ||
 		sysfs_create_file(android_touch_kobj, &dev_attr_s2w_double_tap_duration.attr) ||        
@@ -1965,7 +1967,7 @@ static void synaptics_touch_sysfs_remove(void)
 	sysfs_remove_file(android_touch_kobj, &dev_attr_s2w_allow_stroke.attr);
 	sysfs_remove_file(android_touch_kobj, &dev_attr_s2w_register_threshold.attr);
 	sysfs_remove_file(android_touch_kobj, &dev_attr_s2w_min_distance.attr);
-	sysfs_remove_file(android_touch_kobj, &dev_attr_pocket_detect.attr);
+	sysfs_remove_file(android_touch_kobj, &dev_attr_s2w_pocket_detect.attr);
 	/* DT2W SYSFS STUFF */
 	sysfs_remove_file(android_touch_kobj, &dev_attr_s2w_allow_double_tap.attr);
 	sysfs_remove_file(android_touch_kobj, &dev_attr_s2w_double_tap_duration.attr);
@@ -2071,7 +2073,7 @@ static void synaptics_ts_finger_func(struct synaptics_ts_data *ts)
 	int ret;
 	uint8_t buf[((ts->finger_support * 21 + 3) / 4)];
 #ifdef CONFIG_TOUCHSCREEN_SYNAPTICS_SWEEP2WAKE
-	// -1 = not touched; -2 = touched on screen; >=0 = touched on button panel
+	// -1 = not touched; -2 = touched on screen or > 1 fingers; >=0 = touched on button panel
 	static int downx = -1;
 	// -1 = not touched; >=0 touched on screen
 	static int downy = -1;
@@ -2332,6 +2334,9 @@ static void synaptics_ts_finger_func(struct synaptics_ts_data *ts)
 						if (s2w_active()) {
 							if (ts->finger_count == 1)
 								downy = finger_data[i][1];
+							// this prevents swipes with 2 or more fingers to trigger s2w.
+							if (ts->finger_count > 1)
+								downx = -2; 
 							if (s2w_switch) {
 								if (s2w_allow_stroke) {
 									// stroke2wake - any direction activates
@@ -2350,7 +2355,7 @@ static void synaptics_ts_finger_func(struct synaptics_ts_data *ts)
 													// unlock after distance travelled
 													if (abs(downx - finger_data[i][0]) > s2w_min_distance)	{
 														if (exec_count) {
-															if (scr_suspended)	{
+															if (scr_suspended) {
 																if (sweep2wake_pwrtrigger()) {
 																	pr_info(S2W_TAG "ON");
 																	mode=true;
@@ -2777,13 +2782,7 @@ static int psensor_tp_status_handler_func(struct notifier_block *this,
 		}
 	}
 
-	if (ts->psensor_status == 0) {
-		if (status == 1)
-			ts->psensor_status = status;
-		else
-			ts->psensor_status = 0;
-	} else
-		ts->psensor_status = status;
+	ts->psensor_status = status;
 
 	if(ts->psensor_detection) {
 		if(ts->psensor_status == 0) {
@@ -3687,15 +3686,23 @@ static int synaptics_ts_resume(struct i2c_client *client)
 		input_report_abs(ts->input_dev, ABS_MT_AMPLITUDE, 0);
 		input_report_abs(ts->input_dev, ABS_MT_POSITION, 1 << 31);
 	}
+
+	ts->psensor_resume_enable = 0;
+	
+	// Only enable P-sensor when not calibrating
 	if(ts->psensor_detection) {
-		if(ts->psensor_status == 0) {
-			ts->psensor_resume_enable = 1;
-			printk(KERN_INFO "[TP] %s: Enable P-sensor by Touch\n", __func__);
-			psensor_enable_by_touch_driver(1);
-		} else if(ts->psensor_phone_enable == 0 ) {
-			if(ts->psensor_status != 3)
-				ts->psensor_resume_enable = 2;
-			ts->psensor_phone_enable = 1;
+		if (ts->packrat_number < SYNAPTICS_FW_NOCAL_PACKRAT) {
+			if (ts->multitouch_calibration) {
+				if(ts->psensor_status == 0) {
+					ts->psensor_resume_enable = 1;
+					printk(KERN_INFO "[TP] %s: Enable P-sensor by Touch\n", __func__);
+					psensor_enable_by_touch_driver(1);
+				} else if(ts->psensor_phone_enable == 0 ) {
+					if(ts->psensor_status != 3)
+						ts->psensor_resume_enable = 2;
+					ts->psensor_phone_enable = 1;
+				}
+			}
 		}
 	}
 
