@@ -107,6 +107,7 @@ static void dock_detect_work(struct work_struct *w);
 static void dock_detect_init(struct cable_detect_info *pInfo);
 #endif
 
+void clear_usb_reset_wdt(void);
 static void enable_usb_reset_wdt(struct work_struct *w);
 extern bool g_bMhlProbe;
 int usb_get_vbus_value(void)
@@ -147,7 +148,6 @@ int cable_detect_register_notifier(struct t_cable_status_notifier *notifier)
 {
 	if (!notifier || !notifier->name || !notifier->func)
 		return -EINVAL;
-
 	mutex_lock(&cable_notify_sem);
 	list_add(&notifier->cable_notifier_link, &g_lh_cable_detect_notifier_list);
 	notifier->func(cable_get_connect_type());
@@ -1134,7 +1134,7 @@ void cable_detection_queue_recovery_host_work(int time)
 }
 EXPORT_SYMBOL(cable_detection_queue_recovery_host_work);
 
-void clear_usb_reset_wdt(void)
+void clear_usb_reset_wdt()
 {
 	struct cable_detect_info *pInfo = &the_cable_info;
 	if (pInfo->reset_en_clr_gpio > 0) {
