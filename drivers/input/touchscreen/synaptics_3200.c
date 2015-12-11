@@ -170,7 +170,7 @@ static bool mode=true;
 /*DT2W variables */
 static bool s2w_allow_double_tap = false;
 static unsigned int s2w_double_tap_duration = 150; /* msecs */
-static unsigned int s2w_double_tap_threshold = 300; /* msecs */
+static unsigned int s2w_double_tap_threshold = 500; /* msecs */
 /* 0 = works on whole screen area, 1780 = works only in virtual key panel area */
 static unsigned int s2w_double_tap_dead_area = 1780; /* Y - points. Double tap to wake detect area */
 static unsigned int s2w_double_tap_start = 0;
@@ -2073,7 +2073,7 @@ static void synaptics_ts_finger_func(struct synaptics_ts_data *ts)
 	int ret;
 	uint8_t buf[((ts->finger_support * 21 + 3) / 4)];
 #ifdef CONFIG_TOUCHSCREEN_SYNAPTICS_SWEEP2WAKE
-	// -1 = not touched; -2 = touched on screen or > 1 fingers; >=0 = touched on button panel
+	// -1 = not touched; -2 = touched on screen; -3 more than 1 finger; >=0 = touched on button panel
 	static int downx = -1;
 	// -1 = not touched; >=0 touched on screen
 	static int downy = -1;
@@ -2180,15 +2180,9 @@ static void synaptics_ts_finger_func(struct synaptics_ts_data *ts)
 #ifdef CONFIG_TOUCHSCREEN_SYNAPTICS_SWEEP2WAKE
 			/* if finger released, reset count & barriers */
 			if ((((ts->finger_count > 0)?1:0) == 0) && s2w_active()) {
-				/* ALWAYS RESET S2W PARAMETERS */
-				if (s2w_switch) {  
-					exec_count = true;  
-					barrier = false;  
-					downx = -1;  
-				} 
 				/* DT2W STARTS HERE */
 				/* ALLOW IT IF: */
-				if (scr_suspended && s2w_allow_double_tap && (downy > s2w_double_tap_dead_area)) {
+				if (scr_suspended && s2w_allow_double_tap && (downy > s2w_double_tap_dead_area) && (downx != -3)) {
 					/* SET THE ACTUAL TIME */
 					unsigned int now = jiffies_to_msecs(jiffies);
 					/* SET THE DIFF BETWEEN NOW AND DT2W START */
@@ -2207,6 +2201,10 @@ static void synaptics_ts_finger_func(struct synaptics_ts_data *ts)
 				downy = -1;
 				/* DT2W ENDS HERE, S2W WILL BE HANDLED NOW */
 				if (s2w_switch) {
+					/* ALWAYS RESET S2W PARAMETERS */
+					exec_count = true;
+					barrier = false;
+					downx = -1;
 					if (!mode && scr_suspended) {
 						return;
 						/* S2W HANDLE END */
@@ -2336,11 +2334,11 @@ static void synaptics_ts_finger_func(struct synaptics_ts_data *ts)
 								downy = finger_data[i][1];
 							// this prevents swipes with 2 or more fingers to trigger s2w.
 							if (ts->finger_count > 1)
-								downx = -2; 
+								downx = -3; 
 							if (s2w_switch) {
 								if (s2w_allow_stroke) {
 									// stroke2wake - any direction activates
-									if ((ts->finger_count == 1) && s2w_switch && (downx != -2)) {
+									if ((ts->finger_count == 1) && s2w_switch && (downx != -2) && (downx != -3)) {
 										if (finger_data[i][1] > 1780) {
 											if ((downx == -1) || (abs(downx - finger_data[i][0]) > s2w_register_threshold)) {
 												// handle touch down
@@ -2383,7 +2381,7 @@ static void synaptics_ts_finger_func(struct synaptics_ts_data *ts)
 								}	else {
 									// Free swipe - single direction activation
 									//left->right
-									if ((ts->finger_count == 1) && scr_suspended && s2w_switch && (downx != -2)) {
+									if ((ts->finger_count == 1) && scr_suspended && s2w_switch && (downx != -2) && (downx != -3)) {
 										if (finger_data[i][1] > 1780) {
 											if ((downx == -1) || (finger_data[i][0] > downx)) {
 												// handle touch down
@@ -2413,7 +2411,7 @@ static void synaptics_ts_finger_func(struct synaptics_ts_data *ts)
 										}
 										//right->left
 									} else {
-										if ((ts->finger_count == 1) && !scr_suspended && s2w_switch && (downx != -2)) {
+										if ((ts->finger_count == 1) && !scr_suspended && s2w_switch && (downx != -2) && (downx != -3)) {
 											if (finger_data[i][1] > 1780) {
 												if ((downx == -1) || (finger_data[i][0] < downx)) {
 													// handle touch down
