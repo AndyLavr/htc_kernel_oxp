@@ -1622,7 +1622,6 @@ static DEVICE_ATTR(sr_en, S_IWUSR, 0, set_en_sr);
 static ssize_t synaptics_s2w_pocket_detect_show(struct device *dev, struct device_attribute *attr, char *buf) {
 	size_t count = 0;
 
-	count += sprintf(buf, "%d\n", pocket_detect);
 	count += sprintf(buf, "%d\n", s2w_pocket_detect);
 	return count;
 }
