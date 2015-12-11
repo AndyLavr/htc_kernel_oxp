@@ -372,19 +372,19 @@ static void tps80032_int_notifier_func(int int_reg, int value)
 		if (htc_batt_info.rep.charging_source == CHARGER_USB) {
 			wake_lock(&htc_batt_info.vbus_wake_lock);
 			if (!!(get_kernel_flag() & ALL_AC_CHARGING))
-				tps80032_charger_set_ctrl(POWER_SUPPLY_ENABLE_FAST_CHARGE);
+				htc_battery_set_charging(POWER_SUPPLY_ENABLE_FAST_CHARGE);
 			else
-				tps80032_charger_set_ctrl(POWER_SUPPLY_ENABLE_SLOW_CHARGE);
+				htc_battery_set_charging(POWER_SUPPLY_ENABLE_SLOW_CHARGE);
 			wake_unlock(&htc_batt_info.vbus_wake_lock);
 		} else if (!!(get_kernel_flag() & (SET_FAKE_FULL | SET_FAKE_TEMP)) || htc_batt_info.ac_8hour_count < 1) {
 			if (htc_batt_info.rep.charging_source == CHARGER_AC) {
 				wake_lock(&htc_batt_info.vbus_wake_lock);
-				tps80032_charger_set_ctrl(POWER_SUPPLY_ENABLE_FAST_CHARGE);
+				htc_battery_set_charging(POWER_SUPPLY_ENABLE_FAST_CHARGE);
 				htc_batt_info.ac_8hour_count++;
 				wake_unlock(&htc_batt_info.vbus_wake_lock);
 			} else if (htc_batt_info.rep.charging_source == CHARGER_2A_AC) {
 				wake_lock(&htc_batt_info.vbus_wake_lock);
-				tps80032_charger_set_ctrl(POWER_SUPPLY_ENABLE_FAST_HV_CHARGE);
+				htc_battery_set_charging(POWER_SUPPLY_ENABLE_FAST_HV_CHARGE);
 				htc_batt_info.ac_8hour_count++;
 				wake_unlock(&htc_batt_info.vbus_wake_lock);
 			}
@@ -561,17 +561,17 @@ static void reevaluate_charger(void)
 	if (htc_batt_info.rep.charging_source == CHARGER_USB) {
 		wake_lock(&htc_batt_info.vbus_wake_lock);
 		if (!!(get_kernel_flag() & ALL_AC_CHARGING))
-			tps80032_charger_set_ctrl(POWER_SUPPLY_ENABLE_FAST_CHARGE);
+			htc_battery_set_charging(POWER_SUPPLY_ENABLE_FAST_CHARGE);
 		else
-			tps80032_charger_set_ctrl(POWER_SUPPLY_ENABLE_SLOW_CHARGE);
+			htc_battery_set_charging(POWER_SUPPLY_ENABLE_SLOW_CHARGE);
 		wake_unlock(&htc_batt_info.vbus_wake_lock);
 	} else if (htc_batt_info.rep.charging_source == CHARGER_AC) {
 		wake_lock(&htc_batt_info.vbus_wake_lock);
-		tps80032_charger_set_ctrl(POWER_SUPPLY_ENABLE_FAST_CHARGE);
+		htc_battery_set_charging(POWER_SUPPLY_ENABLE_FAST_CHARGE);
 		wake_unlock(&htc_batt_info.vbus_wake_lock);
 	} else if (htc_batt_info.rep.charging_source == CHARGER_2A_AC) {
 		wake_lock(&htc_batt_info.vbus_wake_lock);
-		tps80032_charger_set_ctrl(POWER_SUPPLY_ENABLE_FAST_HV_CHARGE);
+		htc_battery_set_charging(POWER_SUPPLY_ENABLE_FAST_HV_CHARGE);
 		wake_unlock(&htc_batt_info.vbus_wake_lock);
 	}
 }
@@ -653,29 +653,14 @@ static void usb_status_notifier_func(int online)
 
 /* Notify the kernel of the current charger mode */
 /* set AC mode in userspace to enable AC charger when 2A mode */
-/*  (htcbatt does not know about 2A charger source) */
-	if (htc_batt_info.rep.charging_source == CHARGER_2A_AC) {
+	if (htc_batt_info.rep.charging_source == CHARGER_2A_AC)
 		htc_batt_info.rep.charging_source = CHARGER_AC;
-		htc_batt_timer.charger_flag = (unsigned int)htc_batt_info.rep.charging_source;
-		scnprintf(message, 16, "CHG_SOURCE=%d", htc_batt_info.rep.charging_source);
-		update_wake_lock(htc_batt_info.rep.charging_source);
-		mutex_unlock(&htc_batt_info.info_lock);
-		kobject_uevent_env(&htc_batt_info.batt_cable_kobj, KOBJ_CHANGE, envp);
-		msleep(30); /* delay to let ioctl detect the charger change */
-		mutex_lock(&htc_batt_info.info_lock);
-		htc_batt_info.rep.charging_source = CHARGER_2A_AC;
-		htc_batt_timer.charger_flag = (unsigned int)htc_batt_info.rep.charging_source;
-		scnprintf(message, 16, "CHG_SOURCE=%d", htc_batt_info.rep.charging_source);
-		update_wake_lock(htc_batt_info.rep.charging_source);
-		mutex_unlock(&htc_batt_info.info_lock);
-		kobject_uevent_env(&htc_batt_info.batt_cable_kobj, KOBJ_CHANGE, envp);
-	} else {
-		htc_batt_timer.charger_flag = (unsigned int)htc_batt_info.rep.charging_source;
-		scnprintf(message, 16, "CHG_SOURCE=%d", htc_batt_info.rep.charging_source);
-		update_wake_lock(htc_batt_info.rep.charging_source);
-		mutex_unlock(&htc_batt_info.info_lock);
-		kobject_uevent_env(&htc_batt_info.batt_cable_kobj, KOBJ_CHANGE, envp);
-	}
+
+	htc_batt_timer.charger_flag = (unsigned int)htc_batt_info.rep.charging_source;
+	scnprintf(message, 16, "CHG_SOURCE=%d", htc_batt_info.rep.charging_source);
+	update_wake_lock(htc_batt_info.rep.charging_source);
+	mutex_unlock(&htc_batt_info.info_lock);
+	kobject_uevent_env(&htc_batt_info.batt_cable_kobj, KOBJ_CHANGE, envp);
 }
 
 static int htc_battery_set_charging(int ctl)
@@ -903,9 +888,6 @@ static int htc_batt_open(struct inode *inode, struct file *filp)
 
 	BATT_LOG("%s: open misc device driver.", __func__);
 	spin_lock(&htc_batt_info.batt_lock);
-
-	/* set battery capacity to 2040 mAh */
-	htc_batt_info.rep.full_bat = 2040000;
 
 	if (!htc_batt_info.first_level_ready) {
 		ret = -EBUSY;
@@ -1404,9 +1386,8 @@ static long htc_batt_ioctl(struct file *filp,
 			break;
 		}
 		BATT_LOG("do charger control = %u", charger_mode);
-		/* Don't set AC mode as this is done by reevaluate now */
-		if (charger_mode != CHARGER_AC)
-			htc_battery_set_charging(charger_mode);
+		/* Don't set charger mode as this is done by reevaluate now */
+		// htc_battery_set_charging(charger_mode);
 		break;
 	}
 	case HTC_BATT_IOCTL_UPDATE_BATT_INFO: {
