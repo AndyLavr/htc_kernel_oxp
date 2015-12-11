@@ -749,6 +749,7 @@ static int gpio_keys_suspend(struct device *dev)
 	struct gpio_keys_platform_data *pdata = pdev->dev.platform_data;
 	int i;
 
+	printk(KERN_INFO "[KEY] suspend start\n");
 	if (device_may_wakeup(&pdev->dev)) {
 		for (i = 0; i < pdata->nbuttons; i++) {
 			struct gpio_keys_button *button = &pdata->buttons[i];
@@ -759,7 +760,7 @@ static int gpio_keys_suspend(struct device *dev)
 		}
 	}
 	doCheck = false;
-	pr_info("[KEY] doCheck = false\n");
+	printk(KERN_INFO "[KEY] suspend end\n");
 	return 0;
 }
 
@@ -771,6 +772,7 @@ static int gpio_keys_resume(struct device *dev)
 	int wakeup_key = KEY_RESERVED;
 	int i;
 
+	printk(KERN_INFO "[KEY] resume start\n");
 	if (pdata->wakeup_key)
 		wakeup_key = pdata->wakeup_key();
 
@@ -790,6 +792,7 @@ static int gpio_keys_resume(struct device *dev)
 	}
 	input_sync(ddata->input);
 
+	printk(KERN_INFO "[KEY] resume end\n");
 	return 0;
 }
 
