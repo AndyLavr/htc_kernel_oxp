@@ -2683,6 +2683,15 @@ CONFIG_USB_ANDROID_ECM=y
 # CONFIG_USB_MSC_PROFILING is not set
 # CONFIG_USB_GADGET_VERIZON_PRODUCT_ID is not set
 
+# USB Fast charge
+CONFIG_ENABLE_FAST_CHARGE=y
+
+# UltraFast charging with 2A charger
+CONFIG_USB_2A_CHARGER_DETECT=y
+
+# UltraFast 2A charging when in CAR_DOCK
+CONFIG_2A_CABLE_DETECT_CAR=y
+
 #
 # OTG and related infrastructure
 #
