@@ -694,6 +694,9 @@ static int dhd_set_suspend(int value, dhd_pub_t *dhd)
 /* HTC_CSP_START */
     char eventmask[WL_EVENTING_MASK_LEN];
     int ret = 0;
+
+    if (is_screen_off == value)
+        return ret;
     is_screen_off = value;
 /* HTC_CSP_END */
 
