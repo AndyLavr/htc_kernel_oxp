@@ -489,7 +489,7 @@ static int __devinit gpio_keys_setup_key(struct platform_device *pdev,
 					 struct gpio_button_data *bdata,
 					 struct gpio_keys_button *button)
 {
-	char *desc = button->desc ? button->desc : "gpio_keys";
+	const char *desc = button->desc ? button->desc : "gpio_keys";
 	struct device *dev = &pdev->dev;
 	unsigned long irqflags;
 	int irq, error;
@@ -611,6 +611,7 @@ static int __devinit gpio_keys_probe(struct platform_device *pdev)
 	input->id.version = 0x0100;
 
 	#ifdef CONFIG_TOUCHSCREEN_SYNAPTICS_SWEEP2WAKE
+	printk(KERN_INFO "[KEY][S2W] set device %s\n", input->name);
 	if (!strcmp(input->name, "gpio-keys")) {
 		sweep2wake_setdev(input);
 		printk(KERN_INFO "[KEY][S2W] sweep2wake_setdev (%s)\n", input->name);
