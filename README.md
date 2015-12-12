@@ -23,9 +23,6 @@ fast charging, including 2A) ultrafast_charge (1 enable 2A charging, 0 disable 2
 ultrafast_car (1 set 2A charging when in CAR dock, 0 set 1A charging when in CAR dock) 
 The default is 1 for all settings.
 
-A great app to test the charging current is Ampere, get it on the play store HERE and set interface 
-to 5 (/sys/class/power_supply/battery/batt_current_now).
-
 Fixed S2W pocket detection causing lockups and S2W/DT2W will not respond when touching / swiping with 
 more than one finger.
 
@@ -34,6 +31,9 @@ Tegra NEON support added, and improved how the charger chip is set.
 Many thanks XtheOne and to all the great devs of various parts and modules that made this possible.
 
 ```
+
+A great app to test the charging current is [Ampere](https://play.google.com/store/apps/details?id=com.gombosdev.ampere "Measure the charging and discharging current of your battery"), get it 
+on the play store HERE and set interface to 4 (/sys/class/power_supply/battery/batt_current_now).
 
 
 Copyright (C) 2015  Andrei Lavreniyuk
