@@ -25,6 +25,7 @@ The default is 1 for all settings.
 
 Fixed S2W pocket detection causing lockups and S2W/DT2W will not respond when touching / swiping with 
 more than one finger.
+Enable DT2W - /sys/android_touch/s2w_allow_double_tap (1 enable DT2W, 0 disable DT2W)
 
 Tegra NEON support added, and improved how the charger chip is set.
 

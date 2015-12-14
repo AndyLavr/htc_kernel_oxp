@@ -169,7 +169,7 @@ static bool barrier = false;
 static bool mode=true;
 
 /*DT2W variables */
-static bool s2w_allow_double_tap = false;
+static bool s2w_allow_double_tap = true;
 static unsigned int s2w_double_tap_duration = 150; /* msecs */
 static unsigned int s2w_double_tap_threshold = 500; /* msecs */
 /* 0 = works on whole screen area, 1780 = works only in virtual key panel area */
