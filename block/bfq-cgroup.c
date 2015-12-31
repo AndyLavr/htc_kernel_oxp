@@ -555,14 +555,15 @@ static void bfq_end_wr_async(struct bfq_data *bfqd)
 	struct bfq_group *bfqg;
 
 	hlist_for_each_entry_safe(bfqg, pos, n, &bfqd->group_list, bfqd_node)
-		bfq_end_raising_async_queues(bfqd, bfqg);
+		bfq_end_wr_async_queues(bfqd, bfqg);
 }
 
 /**
  * bfq_disconnect_groups - diconnect @bfqd from all its groups.
-		bfq_end_wr_async_queues(bfqd, bfqg);
-	bfq_end_wr_async_queues(bfqd, bfqd->root_group);
-}
+ *		bfq_end_wr_async_queues(bfqd, bfqg);
+ *	bfq_end_wr_async_queues(bfqd, bfqd->root_group);
+ * }
+ */
 
 /**
  * bfq_disconnect_groups - disconnect @bfqd from all its groups.
