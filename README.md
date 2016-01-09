@@ -1,4 +1,4 @@
-# Kernel for device HTC One X+ (enrc2b) version 3.1.10-7-OXP-Wip adapted for the project CyanogenMod 12.1 (Android 5.1.1 Lollipop).
+# Kernel for device HTC One X+ (enrc2b) version 3.1.10-*-OXP-Wip adapted for the project CyanogenMod 12.1 (Android 5.1.1 Lollipop).
 
 ```
 This modification of the kernel includes the latest kernel with support S2W and 2A charger.
@@ -26,6 +26,7 @@ The default is 1 for all settings.
 Fixed S2W pocket detection causing lockups and S2W/DT2W will not respond when touching / swiping with 
 more than one finger.
 Enable DT2W - /sys/android_touch/s2w_allow_double_tap (1 enable DT2W, 0 disable DT2W)
+DT2W enabled by default.
 
 Tegra NEON support added, and improved how the charger chip is set.
 
