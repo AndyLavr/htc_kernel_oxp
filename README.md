@@ -1,4 +1,4 @@
-# Kernel for device HTC One X+ (enrc2b) version 3.1.10-*-OXP-Wip adapted for the project CyanogenMod 12.1 (Android 5.1.1 Lollipop).
+# Kernel for device HTC One X+ (enrc2b) version 3.1.10-*-OXP-Wip adapted for the project CyanogenMod 13.0 (Android 6.0 MarshMallow).
 
 ```
 This modification of the kernel includes the latest kernel with support S2W and 2A charger.
