@@ -18,15 +18,15 @@ It will switch to 2A when D+ and D- are not shorted on the USB connector. And it
 to 2A mode when put into the CAR dock.
 In 2A mode the USB current limit is set to 2100mA and the Charger Constant Current is set to 1500mA.
 The settings can be configured by changing the values in these files located in 
-/sys/devices/platform/htc_battery fast_charge (1 enable fast charging, 0 disable 
-fast charging, including 2A) ultrafast_charge (1 enable 2A charging, 0 disable 2A charging) 
-ultrafast_car (1 set 2A charging when in CAR dock, 0 set 1A charging when in CAR dock) 
-The default is 1 for all settings.
+/sys/devices/platform/htc_battery/fast_charge (1 enable fast charging, 0 disable 
+fast charging, including 2A) /sys/devices/platform/htc_battery/ultrafast_charge (1 enable 2A charging,
+0 disable 2A charging) 
+/sys/devices/platform/htc_battery/ultrafast_car (1 set 2A charging when in CAR dock, 0 set 1A charging
+when in CAR dock).
 
 Fixed S2W pocket detection causing lockups and S2W/DT2W will not respond when touching / swiping with 
 more than one finger.
-Enable DT2W - /sys/android_touch/s2w_allow_double_tap (1 enable DT2W, 0 disable DT2W)
-DT2W enabled by default.
+Enable DT2W - /sys/android_touch/s2w_allow_double_tap (1 enable DT2W, 0 disable DT2W).
 
 Tegra NEON support added, and improved how the charger chip is set.
 
