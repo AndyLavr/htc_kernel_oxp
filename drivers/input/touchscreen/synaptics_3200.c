@@ -162,14 +162,14 @@ static unsigned int s2w_min_distance = 325;
 static bool s2w_allow_stroke = true;
 /* pocket detection to prevent accidental wakes */
 static bool s2w_pocket_detect = true;
-static bool s2w_switch = true;
+static bool s2w_switch = false;
 static bool scr_suspended = false;
 static bool exec_count = true;
 static bool barrier = false;
 static bool mode=true;
 
 /*DT2W variables */
-static bool s2w_allow_double_tap = true;
+static bool s2w_allow_double_tap = false;
 static unsigned int s2w_double_tap_duration = 150; /* msecs */
 static unsigned int s2w_double_tap_threshold = 500; /* msecs */
 /* 0 = works on whole screen area, 1780 = works only in virtual key panel area */
