@@ -1274,6 +1274,7 @@ int check_unsafe_exec(struct linux_binprm *bprm)
 
 /*
  * Fill the binprm structure from the inode.
+*/ 
 static void bprm_fill_uid(struct linux_binprm *bprm)
 {
 	struct inode *inode;
