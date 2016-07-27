@@ -936,7 +936,7 @@ static void __mmc_set_clock(struct mmc_host *host, unsigned int hz)
 {
 	printk("mmc0: f_min=%d < Hz=%d\n", host->f_min, hz);
 	if (hz)
-		WARN_ON(hz < host->f_min);
+		WARN_ON(hz != 0 && hz < host->f_min);
 
 	if (hz > host->f_max)
 		hz = host->f_max;
