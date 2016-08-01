@@ -196,13 +196,13 @@ static inline cputime64_t get_cpu_idle_time_jiffy(unsigned int cpu,
 	cputime64_t busy_time;
 
 	cur_wall_time = jiffies64_to_cputime64(get_jiffies_64());
+	busy_time = cputime64_add(kstat_cpu(cpu).cpustat.user,
+			kstat_cpu(cpu).cpustat.system);
 
-	busy_time  = kcpustat_cpu(cpu).cpustat[CPUTIME_USER];
-	busy_time += kcpustat_cpu(cpu).cpustat[CPUTIME_SYSTEM];
-	busy_time += kcpustat_cpu(cpu).cpustat[CPUTIME_IRQ];
-	busy_time += kcpustat_cpu(cpu).cpustat[CPUTIME_SOFTIRQ];
-	busy_time += kcpustat_cpu(cpu).cpustat[CPUTIME_STEAL];
-	busy_time += kcpustat_cpu(cpu).cpustat[CPUTIME_NICE];
+	busy_time = cputime64_add(busy_time, kstat_cpu(cpu).cpustat.irq);
+	busy_time = cputime64_add(busy_time, kstat_cpu(cpu).cpustat.softirq);
+	busy_time = cputime64_add(busy_time, kstat_cpu(cpu).cpustat.steal);
+	busy_time = cputime64_add(busy_time, kstat_cpu(cpu).cpustat.nice);
 
 	idle_time = (cur_wall_time - busy_time);
 	if (wall)
@@ -504,7 +504,7 @@ static ssize_t store_ignore_nice_load(struct kobject *a, struct attribute *b,
 		bds_info->prev_cpu_idle = get_cpu_idle_time(j,
 						&bds_info->prev_cpu_wall);
 		if (bds_tuners_ins.ignore_nice)
-			bds_info->prev_cpu_nice = kcpustat_cpu(j).cpustat[CPUTIME_NICE];
+			bds_info->prev_cpu_nice = kstat_cpu(j).cpustat.nice;
 
 	}
 	return count;
@@ -887,7 +887,7 @@ static void bds_check_cpu(struct cpu_bds_info_s *this_bds_info)
 			cputime64_t cur_nice;
 			unsigned long cur_nice_jiffies;
 
-			cur_nice = (kcpustat_cpu(j).cpustat[CPUTIME_NICE] - j_bds_info->prev_cpu_nice);
+			cur_nice = (kstat_cpu(j).cpustat.nice - j_bds_info->prev_cpu_nice);
 			/*
 			 * Assumption: nice time between sampling periods will
 			 * be less than 2^32 jiffies for 32 bit sys
@@ -895,7 +895,7 @@ static void bds_check_cpu(struct cpu_bds_info_s *this_bds_info)
 			cur_nice_jiffies = (unsigned long)
 					cputime64_to_jiffies64(cur_nice);
 
-			j_bds_info->prev_cpu_nice = kcpustat_cpu(j).cpustat[CPUTIME_NICE];
+			j_bds_info->prev_cpu_nice = kstat_cpu(j).cpustat.nice;
 			idle_time += jiffies_to_usecs(cur_nice_jiffies);
 		}
 
@@ -1306,7 +1306,7 @@ static int cpufreq_governor_bds(struct cpufreq_policy *policy,
 						&j_bds_info->prev_cpu_wall);
 			if (bds_tuners_ins.ignore_nice) {
 				j_bds_info->prev_cpu_nice =
-						kcpustat_cpu(j).cpustat[CPUTIME_NICE];
+						kstat_cpu(j).cpustat.nice;
 			}
 		}
 		this_bds_info->cpu = cpu;

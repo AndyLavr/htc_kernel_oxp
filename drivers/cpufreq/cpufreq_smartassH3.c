@@ -15,7 +15,7 @@
  * Author: Erasmux
  *
  * Based on the interactive governor By Mike Chan (mike@android.com)
- * which was adaptated to 2.6.29 kernel by Nadlabak (pavel@doshaska.net)
+ * which was adaptated to 3.1.10 kernel by Jeff Mixon (jeffmixon.com).
  *
  * SMP support based on mod by faux123
  *
