@@ -531,7 +531,12 @@ CONFIG_ARM_FLUSH_CONSOLE_ON_RESTART=y
 # CONFIG_USE_OF is not set
 CONFIG_ZBOOT_ROM_TEXT=0x0
 CONFIG_ZBOOT_ROM_BSS=0x0
+<<<<<<< HEAD:arch/arm/configs/enrc2b_defconfig
 CONFIG_CMDLINE="tegra_wdt.heartbeat=30" 
+=======
+CONFIG_CMDLINE="tegra_wdt.heartbeat=30 androidboot.hardware=grouper"
+# CONFIG_CMDLINE_FROM_BOOTLOADER is not set
+>>>>>>> 7b6e63b... grouper: update kernel for m:arch/arm/configs/cyanogenmod_grouper_defconfig
 CONFIG_CMDLINE_EXTEND=y
 # CONFIG_XIP_KERNEL is not set
 # CONFIG_KEXEC is not set
