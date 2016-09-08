@@ -171,7 +171,7 @@ static ssize_t sel_write_enforce(struct file *file, const char __user *buf,
 	new_value = 0;
 
 	/*
-	 * This will fool android into thinking that its enforcing at boot. 
+	 * This will fool android into thinking that its enforcing at boot.
 	 * but it will allow enforcing if its set again.
 	 */
 	if (allow == 0) {
